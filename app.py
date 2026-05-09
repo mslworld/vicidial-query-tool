@@ -51,6 +51,43 @@ state_area_codes = {
     "DC": ['202','301','703']
 }
 
+# State name mapping (full names to abbreviations)
+state_names = {
+    "alabama": "AL", "alaska": "AK", "arizona": "AZ", "arkansas": "AR", "california": "CA",
+    "colorado": "CO", "connecticut": "CT", "delaware": "DE", "florida": "FL", "georgia": "GA",
+    "hawaii": "HI", "iowa": "IA", "idaho": "ID", "illinois": "IL", "indiana": "IN",
+    "kansas": "KS", "kentucky": "KY", "louisiana": "LA", "massachusetts": "MA", "maryland": "MD",
+    "maine": "ME", "michigan": "MI", "minnesota": "MN", "missouri": "MO", "mississippi": "MS",
+    "montana": "MT", "north carolina": "NC", "north dakota": "ND", "nebraska": "NE", "new hampshire": "NH",
+    "new jersey": "NJ", "new mexico": "NM", "nevada": "NV", "new york": "NY", "ohio": "OH",
+    "oklahoma": "OK", "oregon": "OR", "pennsylvania": "PA", "rhode island": "RI", "south carolina": "SC",
+    "south dakota": "SD", "tennessee": "TN", "texas": "TX", "utah": "UT", "virginia": "VA",
+    "vermont": "VT", "washington": "WA", "wisconsin": "WI", "west virginia": "WV", "wyoming": "WY",
+    "district of columbia": "DC", "dc": "DC"
+}
+
+def normalize_state(input_state):
+    """
+    Normalize state input to standard 2-letter abbreviation.
+    Handles: uppercase, lowercase, mixed case, special characters, full names
+    """
+    # Remove special characters and convert to lowercase
+    cleaned = re.sub(r'[^a-zA-Z]', '', input_state).lower()
+    
+    # Check if it's already a 2-letter abbreviation
+    if len(cleaned) == 2:
+        return cleaned.upper()
+    
+    # Check if it's a full state name
+    if cleaned in state_names:
+        return state_names[cleaned]
+    
+    # Handle 2-letter inputs with mixed case
+    if len(input_state.strip()) == 2:
+        return input_state.strip().upper()
+    
+    return None
+
 # MULTI-LINE INPUT 🔥
 user_input = st.text_area("Enter States (row, column, comma, space — sab chalega)")
 
@@ -59,17 +96,24 @@ if st.button("Generate Query"):
     # Split by comma, space, newline (ALL formats supported)
     states = re.split(r"[,\s\n]+", user_input)
 
-    # Clean + uppercase + remove empty
-    states = [s.strip().upper() for s in states if s.strip()]
-
-    area_codes = []
+    # Clean and normalize states
+    normalized_states = []
     invalid_states = []
 
     for state in states:
+        state = state.strip()
+        if state:
+            normalized = normalize_state(state)
+            if normalized:
+                normalized_states.append(normalized)
+            else:
+                invalid_states.append(state)
+
+    area_codes = []
+
+    for state in normalized_states:
         if state in state_area_codes:
             area_codes.extend(state_area_codes[state])
-        else:
-            invalid_states.append(state)
 
     if area_codes:
         formatted_codes = ",".join([f"'{code}'" for code in sorted(set(area_codes))])
